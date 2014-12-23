@@ -18,3 +18,5 @@ RUN \
   go build
 
 ADD supervisord.conf /etc/supervisor.d/logstash-forwarder.conf
+
+VOLUME [ "/etc/forwarder", "/opt/logstash/ssl", "/data/log" ]
