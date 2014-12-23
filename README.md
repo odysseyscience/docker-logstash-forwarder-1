@@ -1,45 +1,25 @@
-#### Logstash-Forwarder Docker Image
-Build from official logstash-forwarder repo and switched to ISSUE-221 branch to fix ssl problem. 
+Fork of [million12/logstash-forwarder](https://registry.hub.docker.com/u/million12/logstash-forwarder/).
 
-#### Directories
-Make sure your logstash-server ssl certificates are placed in /opt/ssl directory. 
+Removed automatic download of key/cert stuff from `etcd`.
 
-Host OS log directory needs to be shared with the docker container on /data/logs:
+Simply mount your key/crt files for lumberjack protocol to `/opt/logstash/ssl`.  Should be two files: `logstash-forwarder.key` and `logstash-forwarder.crt`.
 
-`-v /var/log:/data/log`
+Mount the host's `/var/log` to this container's `/data/log` in order for the default `forwarder.conf` to find your `system.log`, which is all the default behavior listens to.
 
-#### Logstash IP (Environmental Variable) 
-Use $LOGSTASH_IP environmental variable to redirect data to logstash server. 
+You can mount your `forwarder.conf` to `/etc/forwarder/forwarder.conf` if you don't want to use the default specified in this repo.  If you do this, make sure the SSL and Logstash IP match are configured correctly for your environment, since without using the built-in `forwarder.conf`, you are responsible for making sure the paths and IP are correct (`LOGSTASH_IP` has no affect in this case).
 
-####RUN
-Option 1: Run on the same host as logstash server
+Example using defalts:
 
-`docker run -d --name logstash-forwarder -e LOGSTASH_IP=logstash_server_ip --volumes-from=logstash -v /var/log:/data/log million12/logstash-forwarder`
+    docker run \
+      -v /var/log:/data/log \
+      -v /my/ssl/directory:/opt/logstash/ssl \
+      -e "LOGSTASH_IP=<your_logstash_ip>" \
+      seanadkinson/logstash-forwarder
 
-Option2: Run on different host than logstash server 
+Example with your own configuration:
 
-`docker run -d --name logstash-forwarder -e LOGSTASH_IP=logstash_server_ip -v /dir_with_ssl/:/opt/logstash/ssl -v /var/log:/data/log million12/logstash-forwarder`
-
-FYI: Make sure you have copies of certificates from logstash server. 
-
-####Logging
-If you need to log more than just system.log please edit forwarder.conf file according the <a href="http://logstash.net/docs/1.4.2/">logstash/forwarder manual</a>.
-
-Otherwise you can mount the directory with your host specific forwarder.conf using command -v.
-
-`-v /your-dir:/etc/forwarder/`
-
-Remember to use exact name (forwarder.conf). 
-
-Full command with custom log settings:
-
-`docker run -d --name logstash-forwarder -e LOGSTASH_IP=logstash_server_ip -v /opt/ssl:/opt/logstash-forwarder/ssl -v /var/log:/data/log -v /your-dir:/etc/forwarder/ million12/logstash-forwarder`
-
-#### forwarder.conf
-Make sure you edited your forwarder.conf to send data to your logstash server. Edit IP. 
-By Default IP is set to localhost.
-
-
----
-
-**Sponsored by** [Typostrap.io - the new prototyping tool](http://typostrap.io/) for building highly-interactive prototypes of your website or web app. Built on top of TYPO3 Neos CMS and Zurb Foundation framework.
+    docker run \
+      -v /var/log:/data/log
+      -v /my/ssl/directory:/opt/logstash/ssl
+      -v /my/logstash/forwarder.conf:/etc/forwarder/forwarder.conf
+      seanadkinson/logstash-forwarder
